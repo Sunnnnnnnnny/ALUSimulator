@@ -43,16 +43,6 @@ public class ALU {
 		return result;
 	}
 
-	private char reverse(char a) {
-		char result;
-		if (a == '0') {
-			result = '1';
-		} else {
-			result = '0';
-		}
-		return result;
-	}
-
 	/**
 	 * 生成十进制整数的二进制补码表示。<br/>
 	 * 例：integerRepresentation("9", 8)
@@ -68,22 +58,34 @@ public class ALU {
 
 		String result = "";
 		if (number.startsWith("-")) {
+			// 如果是负数，先算出正数部分
 			String numberToexecute = number.substring(1);
 			String myresult = "";
 			int executeNumber = Integer.parseInt(numberToexecute);
 			for (int i = 0; i < length; i++) {
-				result += (executeNumber % 2);
+				myresult += (executeNumber % 2);
 				if (executeNumber != 0)
 					executeNumber = executeNumber / 2;
 			}
-			result = new StringBuffer(result).reverse().toString();
-			// 取反
-			for (int i = 0; i < result.length(); i++) {
-				myresult += myALU.reverse(result.charAt(i));
+			myresult = new StringBuffer(myresult).reverse().toString();
+			// 取反加1
+			for (int i = myresult.length() - 1; i >= 0; i--) {
+				if (myresult.charAt(i) == '1') {
+					String toReverse = myresult.substring(0, i);
+					for (int j = 0; j < toReverse.length(); j++) {
+						if (toReverse.charAt(j) == '0') {
+							result += "1";
+						} else {
+							result += "0";
+						}
+					}
+					result += myresult.substring(i);
+					break;
+				}
 			}
-			// 加1
 
 		} else {
+			// 正数算法
 			int executeNumber = Integer.parseInt(number);
 			for (int i = 0; i < length; i++) {
 				result += (executeNumber % 2);
@@ -178,7 +180,8 @@ public class ALU {
 		String result = "";
 		int eLengthIs0 = 0, eLengthIs1 = 0, sLengthIs0 = 0, sLengthIs1 = 0;
 
-		for (int i = 1; i < eLength; i++) {
+		// 计算指数为0,1的个数
+		for (int i = 1; i < eLength + 1; i++) {
 			if (operand.charAt(i) == '0') {
 				eLengthIs0++;
 			} else if (operand.charAt(i) == '1') {
@@ -186,6 +189,7 @@ public class ALU {
 			}
 		}
 
+		// 计算尾数为0,1的个数
 		for (int i = eLength + 1; i < operand.length(); i++) {
 			if (operand.charAt(i) == '0') {
 				sLengthIs0++;
@@ -201,8 +205,8 @@ public class ALU {
 		} else if (eLengthIs1 == eLength && sLengthIs0 != sLength) {
 			result = "NaN";
 		} else {
-			String exponent = operand.substring(1, eLength + 1);
-			String mantissa = operand.substring(eLength + 1);
+			String exponent = operand.substring(1, eLength + 1);// 指数部分
+			String mantissa = operand.substring(eLength + 1);// 尾数部分
 			int exponentOfInteger = 0;
 			for (int i = 0; i < exponent.length(); i++) {
 				if (exponent.charAt(i) == '1') {
@@ -210,12 +214,15 @@ public class ALU {
 				}
 			}
 			exponentOfInteger -= Math.pow(2, eLength - 1) - 1;
+
 			String integerPart = "";
 			String doublePart = "";
 			if (exponentOfInteger >= 0) {
+				// 如果指数为正，分出整数和小数部分
 				integerPart = "1" + mantissa.substring(0, exponentOfInteger);
 				doublePart = mantissa.substring(exponentOfInteger);
 			} else {
+				// 如果指数为负，在前面添0
 				String toAdd = "";
 				for (int i = 1; i < (-exponentOfInteger); i++) {
 					toAdd += "0";
@@ -224,13 +231,16 @@ public class ALU {
 			}
 
 			System.out.println(doublePart);
+
 			int integerResult = 0;
 			double doubleResult = 0;
+			// 计算整数部分
 			for (int i = 0; i < integerPart.length(); i++) {
 				if (integerPart.charAt(i) == '1') {
 					integerResult += Math.pow(2, integerPart.length() - i - 1);
 				}
 			}
+			// 计算小数部分
 			for (int i = 0; i < doublePart.length(); i++) {
 				if (doublePart.charAt(i) == '1') {
 					doubleResult += Math.pow(0.5, i + 1);
@@ -256,7 +266,15 @@ public class ALU {
 	 */
 	public String negation(String operand) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		for (int i = 0; i < operand.length(); i++) {
+			if (operand.charAt(i) == '0') {
+				result += "1";
+			} else {
+				result += "0";
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -271,7 +289,14 @@ public class ALU {
 	 */
 	public String leftShift(String operand, int n) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String toAdd = "";
+		String result = "";
+
+		for (int i = 0; i < n; i++) {
+			toAdd += "0";
+		}
+		result = operand + toAdd;
+		return result;
 	}
 
 	/**
@@ -286,7 +311,14 @@ public class ALU {
 	 */
 	public String logRightShift(String operand, int n) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String toAdd = "";
+
+		for (int i = 0; i < n; i++) {
+			toAdd += "0";
+		}
+		result = toAdd + operand;
+		return result;
 	}
 
 	/**
@@ -301,7 +333,20 @@ public class ALU {
 	 */
 	public String ariRightShift(String operand, int n) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String toAdd = "";
+		if (operand.startsWith("0")) {
+			for (int i = 0; i < n; i++) {
+				toAdd += "0";
+			}
+			result = toAdd + operand;
+		} else {
+			for (int i = 0; i < n; i++) {
+				toAdd += "1";
+			}
+			result = toAdd + operand;
+		}
+		return result;
 	}
 
 	/**
