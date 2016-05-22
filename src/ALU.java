@@ -113,7 +113,19 @@ public class ALU {
 	 */
 	public String floatRepresentation(String number, int eLength, int sLength) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String integerPart = "";
+		String doublePart = "";
+
+		// ·ûºÅÎ»
+		if (number.startsWith("-")) {
+			result += "1";
+			integerPart = number.split(".")[0];
+		} else {
+			result += "0";
+		}
+
+		return result;
 	}
 
 	/**
@@ -363,7 +375,11 @@ public class ALU {
 	 */
 	public String fullAdder(char x, char y, char c) {
 		// TODO YOUR CODE HERE.
-		return null;
+		char Ci, S;
+		S = myALU.xor(x, myALU.xor(y, c));
+		Ci = myALU.or(myALU.or(myALU.and(x, y), myALU.and(x, c)), myALU.and(y, c));
+		String result = String.valueOf(Ci) + String.valueOf(S);
+		return result;
 	}
 
 	/**
