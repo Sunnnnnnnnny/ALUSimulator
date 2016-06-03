@@ -794,7 +794,7 @@ public class ALU {
 			// 若被除数符号与除数相反，则+1
 			quotient = myALU.oneAdder(quotient).substring(1);
 		}
-		if (quotient.charAt(0) != operand1.charAt(0)) {
+		if (reminder.charAt(0) != operand1.charAt(0)) {
 			// 若余数和被除数符号不同
 			if (reminder.charAt(0) == divisor.charAt(0)) {
 				// 若除数与余数符号相同，则除数减余数
