@@ -113,8 +113,11 @@ public class ALU {
 	public String floatRepresentation(String number, int eLength, int sLength) {
 		// TODO YOUR CODE HERE.
 		String result = "";
-		String decIntegerPart = "";// 十进制整数部分
-		String decDoublePart = "";// 十进制小数部分
+		int decIntegerPart;// 十进制整数部分
+		double decDoublePart;// 十进制小数部分
+		String mantissa = "";// 尾数部分
+		String binIntegerPart = "";// 二进制整数部分
+		String binDoublePart = "";// 二进制小数部分
 
 		double decTrueValue = Double.parseDouble(number);
 		// 如果传入数字为0
@@ -145,24 +148,102 @@ public class ALU {
 			for (int i = 0; i < sLength; i++) {
 				result += "0";
 			}
+		} else if (decTrueValue < Math.pow(2, 1 - eLength) && decTrueValue > -Math.pow(2, 1 - eLength)) {
+			// 反规格化
+			if (decTrueValue > 0) {
+				result += "0";
+			} else {
+				result += "1";
+			}
+			for (int i = 0; i < eLength; i++) {
+				result += "0";
+			}
+			// 计算尾数
+			decDoublePart = Double.parseDouble("0." + number.split("\\.")[1]);
+			while (decDoublePart != 1) {
+				if (decDoublePart * 2 < 1) {
+					binDoublePart += "0";
+					decDoublePart = decDoublePart * 2;
+				} else if (decDoublePart * 2 > 1) {
+					binDoublePart += "1";
+					decDoublePart = decDoublePart * 2 - 1;
+				} else if (decDoublePart * 2 == 1) {
+					binDoublePart += "1";
+					break;
+				}
+			}
+			mantissa = binDoublePart.substring((int) Math.pow(2, eLength - 2));
+			// 调整尾数长度
+			if (mantissa.length() < sLength) {
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+			} else {
+				mantissa = mantissa.substring(0, sLength);
+			}
+
+		}else{
+			// 得出符号位，并分出整数部分和小数部分
+			if (number.startsWith("-")) {
+				result += "1";
+				decIntegerPart = Integer.parseInt(number.substring(1).split("\\.")[0]);
+				decDoublePart = Double.parseDouble("0." + number.substring(1).split("\\.")[1]);
+			} else {
+				result += "0";
+				decIntegerPart = Integer.parseInt(number.split("\\.")[0]);
+				decDoublePart = Double.parseDouble("0." + number.split("\\.")[1]);
+			}
+
+			while (decIntegerPart >= 0) {
+				// 计算二进制整数部分
+				binIntegerPart += decIntegerPart % 2;
+				decIntegerPart = decIntegerPart / 2;
+				if (decIntegerPart == 0)
+					break;
+			}
+			binIntegerPart = new StringBuffer(binIntegerPart).reverse().toString();
+
+			while (decDoublePart != 1) {
+				if (decDoublePart * 2 < 1) {
+					binDoublePart += "0";
+					decDoublePart = decDoublePart * 2;
+				} else if (decDoublePart * 2 > 1) {
+					binDoublePart += "1";
+					decDoublePart = decDoublePart * 2 - 1;
+				} else if (decDoublePart * 2 == 1) {
+					binDoublePart += "1";
+					break;
+				}
+			}
+			// 计算指数和尾数
+			int integerExponent = 0;
+			if (binIntegerPart.startsWith("1")) {
+				integerExponent = binIntegerPart.length() - 1;
+				mantissa = (binIntegerPart + binDoublePart).substring(1);
+
+			} else {
+				for (int i = 0; i < binDoublePart.length(); i++) {
+					if (binDoublePart.charAt(i) == '1') {
+						integerExponent = -i - 1;
+						mantissa = binDoublePart.substring(i + 1);
+						break;
+					}
+				}
+
+			}
+			// 调整尾数长度
+			if (mantissa.length() < sLength) {
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+			} else {
+				mantissa = mantissa.substring(0, sLength);
+			}
+			String binExponent = myALU.integerRepresentation(String.valueOf(integerExponent), eLength);
+			result += binExponent + mantissa;
 		}
 
-		// 得出符号位，并分出整数部分和小数部分
-		if (number.startsWith("-")) {
-			result += "1";
-			decIntegerPart = number.substring(1).split("\\.")[0];
-			decDoublePart = number.substring(1).split("\\.")[1];
-		} else {
-			result += "0";
-			decIntegerPart = number.split("\\.")[0];
-			decDoublePart = number.split("\\.")[1];
-		}
-
-		// 计算二进制整数部分和小数部分
-		String binIntegerPart = "";
-		String binDoublePart = "";
-
-		binIntegerPart += Integer.parseInt(decIntegerPart) % 2;
+		
 		return result;
 	}
 
@@ -464,22 +545,22 @@ public class ALU {
 		// TODO YOUR CODE HERE.
 		String s = "";
 		String toAdd = "";
-		char c = '0';// 进位
+		char Ci = '0', Cj = '0';// 进位
 		for (int i = 0; i < operand.length() - 1; i++) {
 			toAdd += "0";
 		}
 		toAdd += "1";
 		for (int i = operand.length() - 1; i >= 0; i--) {
-			s += myALU.xor(toAdd.charAt(i), myALU.xor(operand.charAt(i), c));
-			c = myALU.or(myALU.or(myALU.and(toAdd.charAt(i), operand.charAt(i)), myALU.and(toAdd.charAt(i), c)),
-					myALU.and(operand.charAt(i), c));
+			s += myALU.xor(toAdd.charAt(i), myALU.xor(operand.charAt(i), Ci));
+			Ci = myALU.or(myALU.or(myALU.and(toAdd.charAt(i), operand.charAt(i)), myALU.and(toAdd.charAt(i), Ci)),
+					myALU.and(operand.charAt(i), Ci));
 		}
-		String result = new StringBuffer(s).reverse().toString();
-		if (result.charAt(0) == operand.charAt(0)) {
-			result = "0" + result;
-		} else {
-			result = "1" + result;
+		for (int i = operand.length() - 1; i > 0; i--) {
+			Cj = myALU.or(myALU.or(myALU.and(toAdd.charAt(i), operand.charAt(i)), myALU.and(toAdd.charAt(i), Cj)),
+					myALU.and(operand.charAt(i), Cj));
 		}
+		String result = myALU.xor(Ci, Cj) + new StringBuffer(s).reverse().toString();
+
 		return result;
 	}
 
@@ -517,6 +598,7 @@ public class ALU {
 			}
 
 		}
+		toAdd = "";
 		if (operand2.length() < length) {
 			if (operand2.startsWith("0")) {
 				for (int i = 0; i < length - operand2.length(); i++) {
@@ -614,6 +696,7 @@ public class ALU {
 			}
 
 		}
+		toAdd = "";
 		if (operand2.length() < length) {
 			if (operand2.startsWith("0")) {
 				for (int i = 0; i < length - operand2.length(); i++) {
@@ -726,6 +809,7 @@ public class ALU {
 			}
 
 		}
+		toAdd = "";
 		if (operand2.length() < length) {
 			if (operand2.startsWith("0")) {
 				for (int i = 0; i < length - operand2.length(); i++) {
@@ -833,33 +917,51 @@ public class ALU {
 		// 对齐两个操作数
 		String toAdd = "";
 		if (operand1.length() < length) {
-			if (operand1.startsWith("0")) {
-				for (int i = 0; i < length - operand1.length(); i++) {
-					toAdd += "0";
-				}
-				operand1 = toAdd + operand1;
-			} else if (operand1.startsWith("1")) {
-				for (int i = 0; i < length - operand1.length(); i++) {
-					toAdd += "1";
-				}
-				operand1 = toAdd + operand1;
+			for (int i = 0; i < length - operand1.length(); i++) {
+				toAdd += "0";
 			}
-
+			operand1 = operand1.charAt(0) + toAdd + operand1.substring(1);
 		}
+		toAdd = "";
 		if (operand2.length() < length) {
-			if (operand2.startsWith("0")) {
-				for (int i = 0; i < length - operand2.length(); i++) {
-					toAdd += "0";
+			for (int i = 0; i < length - operand2.length(); i++) {
+				toAdd += "0";
+			}
+			operand2 = operand2.charAt(0) + toAdd + operand2.substring(1);
+		}
+
+		String result = "";
+		char sign;
+		if (operand1.charAt(0) == operand2.charAt(0)) {
+			// 两个操作数符号相同，去掉符号位做加法
+			result = myALU.adder("0" + operand1.substring(1), "0" + operand2.substring(1), '0', length).charAt(0)
+					+ operand1.charAt(0)
+					+ myALU.adder("0" + operand1.substring(1), "0" + operand2.substring(1), '0', length).substring(1);
+		} else {
+			String trueValue1 = myALU.integerTrueValue("0" + operand1.substring(1));
+			String trueValue2 = myALU.integerTrueValue("0" + operand2.substring(1));
+			if (Integer.parseInt(trueValue1) > Integer.parseInt(trueValue2)) {
+				sign = operand1.charAt(0);
+				result += myALU.integerSubtraction("0" + operand1.substring(1), "0" + operand2.substring(1), length)
+						.charAt(0);
+				result += sign;
+				result += myALU.integerSubtraction("0" + operand1.substring(1), "0" + operand2.substring(1), length)
+						.substring(1);
+			} else if (Integer.parseInt(trueValue1) < Integer.parseInt(trueValue2)) {
+				sign = operand2.charAt(0);
+				result += myALU.integerSubtraction("0" + operand2.substring(1), "0" + operand1.substring(1), length)
+						.charAt(0);
+				result += sign;
+				result += myALU.integerSubtraction("0" + operand2.substring(1), "0" + operand1.substring(1), length)
+						.substring(1);
+			} else {
+				for (int i = 0; i < length + 2; i++) {
+					result += "0";
 				}
-				operand2 = toAdd + operand2;
-			} else if (operand2.startsWith("1")) {
-				for (int i = 0; i < length - operand2.length(); i++) {
-					toAdd += "1";
-				}
-				operand2 = toAdd + operand2;
 			}
 		}
-		return null;
+
+		return result;
 	}
 
 	/**
