@@ -7,8 +7,6 @@
 
 public class ALU {
 
-	ALU myALU = new ALU();
-
 	/**
 	 * 定义与门，或门，异或门
 	 * 
@@ -182,7 +180,7 @@ public class ALU {
 				mantissa = mantissa.substring(0, sLength);
 			}
 
-		}else{
+		} else {
 			// 得出符号位，并分出整数部分和小数部分
 			if (number.startsWith("-")) {
 				result += "1";
@@ -219,12 +217,14 @@ public class ALU {
 			int integerExponent = 0;
 			if (binIntegerPart.startsWith("1")) {
 				integerExponent = binIntegerPart.length() - 1;
+				integerExponent += Math.pow(2, eLength - 1) - 1;
 				mantissa = (binIntegerPart + binDoublePart).substring(1);
 
 			} else {
 				for (int i = 0; i < binDoublePart.length(); i++) {
 					if (binDoublePart.charAt(i) == '1') {
 						integerExponent = -i - 1;
+						integerExponent += Math.pow(2, eLength - 1) - 1;
 						mantissa = binDoublePart.substring(i + 1);
 						break;
 					}
@@ -233,17 +233,15 @@ public class ALU {
 			}
 			// 调整尾数长度
 			if (mantissa.length() < sLength) {
-				for (int i = 0; i < sLength; i++) {
+				while (mantissa.length() != sLength)
 					mantissa += "0";
-				}
 			} else {
 				mantissa = mantissa.substring(0, sLength);
 			}
-			String binExponent = myALU.integerRepresentation(String.valueOf(integerExponent), eLength);
+			String binExponent = this.integerRepresentation(String.valueOf(integerExponent), eLength);
 			result += binExponent + mantissa;
 		}
 
-		
 		return result;
 	}
 
@@ -260,7 +258,7 @@ public class ALU {
 	 */
 	public String ieee754(String number, int length) {
 		// TODO YOUR CODE HERE.
-		String result = myALU.floatRepresentation(number, 8, 23);
+		String result = this.floatRepresentation(number, 8, 23);
 		return result;
 	}
 
@@ -285,7 +283,8 @@ public class ALU {
 			trueValue = String.valueOf(result);
 		} else {
 			for (int i = 1; i < operand.length(); i++) {
-				result += Math.pow(2, operand.length() - i - 1);
+				if (operand.charAt(i) == '1')
+					result += Math.pow(2, operand.length() - i - 1);
 			}
 			result -= Math.pow(2, operand.length() - 1);
 			trueValue = String.valueOf(result);
@@ -312,80 +311,89 @@ public class ALU {
 		String result = "";
 		int eLengthIs0 = 0, eLengthIs1 = 0, sLengthIs0 = 0, sLengthIs1 = 0;
 
-		// 计算指数为0,1的个数
-		for (int i = 1; i < eLength + 1; i++) {
-			if (operand.charAt(i) == '0') {
-				eLengthIs0++;
-			} else if (operand.charAt(i) == '1') {
-				eLengthIs1++;
-			}
+		// 判断是否为0
+		boolean operandIs0 = true;
+		for (int i = 0; i < operand.length(); i++) {
+			if (operand.charAt(i) == '1')
+				operandIs0 = false;
 		}
-
-		// 计算尾数为0,1的个数
-		for (int i = eLength + 1; i < operand.length(); i++) {
-			if (operand.charAt(i) == '0') {
-				sLengthIs0++;
-			} else if (operand.charAt(i) == '1') {
-				sLengthIs1++;
-			}
-		}
-
-		if (operand.startsWith("0") && eLengthIs1 == eLength && sLengthIs0 == sLength) {
-			result = "+Inf";
-		} else if (operand.startsWith("1") && eLengthIs1 == eLength && sLengthIs0 == sLength) {
-			result = "-Inf";
-		} else if (eLengthIs1 == eLength && sLengthIs0 != sLength) {
-			result = "NaN";
-		} else {
-			String exponent = operand.substring(1, eLength + 1);// 指数部分
-			String mantissa = operand.substring(eLength + 1);// 尾数部分
-			int exponentOfInteger = 0;
-			for (int i = 0; i < exponent.length(); i++) {
-				if (exponent.charAt(i) == '1') {
-					exponentOfInteger += Math.pow(2, exponent.length() - i - 1);
+		if (operandIs0)
+			return "0";
+		else {
+			// 计算指数为0,1的个数
+			for (int i = 1; i < eLength + 1; i++) {
+				if (operand.charAt(i) == '0') {
+					eLengthIs0++;
+				} else if (operand.charAt(i) == '1') {
+					eLengthIs1++;
 				}
 			}
-			exponentOfInteger -= Math.pow(2, eLength - 1) - 1;
 
-			String integerPart = "";
-			String doublePart = "";
-			if (exponentOfInteger >= 0) {
-				// 如果指数为正，分出整数和小数部分
-				integerPart = "1" + mantissa.substring(0, exponentOfInteger);
-				doublePart = mantissa.substring(exponentOfInteger);
+			// 计算尾数为0,1的个数
+			for (int i = eLength + 1; i < operand.length(); i++) {
+				if (operand.charAt(i) == '0') {
+					sLengthIs0++;
+				} else if (operand.charAt(i) == '1') {
+					sLengthIs1++;
+				}
+			}
+
+			if (operand.startsWith("0") && eLengthIs1 == eLength && sLengthIs0 == sLength) {
+				result = "+Inf";
+			} else if (operand.startsWith("1") && eLengthIs1 == eLength && sLengthIs0 == sLength) {
+				result = "-Inf";
+			} else if (eLengthIs1 == eLength && sLengthIs0 != sLength) {
+				result = "NaN";
 			} else {
-				// 如果指数为负，在前面添0
-				String toAdd = "";
-				for (int i = 1; i < (-exponentOfInteger); i++) {
-					toAdd += "0";
+				String exponent = operand.substring(1, eLength + 1);// 指数部分
+				String mantissa = operand.substring(eLength + 1);// 尾数部分
+				int exponentOfInteger = 0;
+				for (int i = 0; i < exponent.length(); i++) {
+					if (exponent.charAt(i) == '1') {
+						exponentOfInteger += Math.pow(2, exponent.length() - i - 1);
+					}
 				}
-				doublePart = toAdd + "1" + mantissa;
-			}
+				exponentOfInteger -= Math.pow(2, eLength - 1) - 1;
 
-			System.out.println(doublePart);
+				String integerPart = "";
+				String doublePart = "";
+				if (exponentOfInteger >= 0) {
+					// 如果指数为正，分出整数和小数部分
+					integerPart = "1" + mantissa.substring(0, exponentOfInteger);
+					doublePart = mantissa.substring(exponentOfInteger);
+				} else {
+					// 如果指数为负，在前面添0
+					String toAdd = "";
+					for (int i = 1; i < (-exponentOfInteger); i++) {
+						toAdd += "0";
+					}
+					doublePart = toAdd + "1" + mantissa;
+				}
 
-			int integerResult = 0;
-			double doubleResult = 0;
-			// 计算整数部分
-			for (int i = 0; i < integerPart.length(); i++) {
-				if (integerPart.charAt(i) == '1') {
-					integerResult += Math.pow(2, integerPart.length() - i - 1);
+				int integerResult = 0;
+				double doubleResult = 0;
+				// 计算整数部分
+				for (int i = 0; i < integerPart.length(); i++) {
+					if (integerPart.charAt(i) == '1') {
+						integerResult += Math.pow(2, integerPart.length() - i - 1);
+					}
+				}
+				// 计算小数部分
+				for (int i = 0; i < doublePart.length(); i++) {
+					if (doublePart.charAt(i) == '1') {
+						doubleResult += Math.pow(0.5, i + 1);
+					}
+				}
+
+				if (operand.startsWith("0")) {
+					result = String.valueOf(integerResult) + "." + String.valueOf(doubleResult).substring(2);
+				} else {
+					result = "-" + String.valueOf(integerResult) + "." + String.valueOf(doubleResult).substring(2);
 				}
 			}
-			// 计算小数部分
-			for (int i = 0; i < doublePart.length(); i++) {
-				if (doublePart.charAt(i) == '1') {
-					doubleResult += Math.pow(0.5, i + 1);
-				}
-			}
-
-			if (operand.startsWith("0")) {
-				result = String.valueOf(integerResult) + "." + String.valueOf(doubleResult).substring(2);
-			} else {
-				result = "-" + String.valueOf(integerResult) + "." + String.valueOf(doubleResult).substring(2);
-			}
+			return result;
 		}
-		return result;
+
 	}
 
 	/**
@@ -500,8 +508,8 @@ public class ALU {
 	public String fullAdder(char x, char y, char c) {
 		// TODO YOUR CODE HERE.
 		char Ci, S;
-		S = myALU.xor(x, myALU.xor(y, c));
-		Ci = myALU.or(myALU.or(myALU.and(x, y), myALU.and(x, c)), myALU.and(y, c));
+		S = this.xor(x, this.xor(y, c));
+		Ci = this.or(this.or(this.and(x, y), this.and(x, c)), this.and(y, c));
 		String result = String.valueOf(Ci) + String.valueOf(S);
 		return result;
 	}
@@ -521,9 +529,14 @@ public class ALU {
 	public String claAdder(String operand1, String operand2, char c) {
 		// TODO YOUR CODE HERE.
 		String s = "";
+		char P, G, Ci;
 		for (int i = operand1.length() - 1; i >= 0; i--) {
-			s += myALU.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(1);
-			c = myALU.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(0);
+			s += this.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(1);
+			c = this.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(0);
+		}
+		for (int i = operand1.length() - 1; i >= 0; i--) {
+			P = this.and(operand1.charAt(i), operand2.charAt(i));
+			G = this.or(operand1.charAt(i), operand2.charAt(i));
 		}
 		String result = c + new StringBuffer(s).reverse().toString();
 		return result;
@@ -545,22 +558,26 @@ public class ALU {
 		// TODO YOUR CODE HERE.
 		String s = "";
 		String toAdd = "";
+		String result = "";
 		char Ci = '0', Cj = '0';// 进位
 		for (int i = 0; i < operand.length() - 1; i++) {
 			toAdd += "0";
 		}
 		toAdd += "1";
 		for (int i = operand.length() - 1; i >= 0; i--) {
-			s += myALU.xor(toAdd.charAt(i), myALU.xor(operand.charAt(i), Ci));
-			Ci = myALU.or(myALU.or(myALU.and(toAdd.charAt(i), operand.charAt(i)), myALU.and(toAdd.charAt(i), Ci)),
-					myALU.and(operand.charAt(i), Ci));
+			s += this.xor(toAdd.charAt(i), this.xor(operand.charAt(i), Ci));
+			Ci = this.or(this.or(this.and(toAdd.charAt(i), operand.charAt(i)), this.and(toAdd.charAt(i), Ci)),
+					this.and(operand.charAt(i), Ci));
 		}
 		for (int i = operand.length() - 1; i > 0; i--) {
-			Cj = myALU.or(myALU.or(myALU.and(toAdd.charAt(i), operand.charAt(i)), myALU.and(toAdd.charAt(i), Cj)),
-					myALU.and(operand.charAt(i), Cj));
+			Cj = this.or(this.or(this.and(toAdd.charAt(i), operand.charAt(i)), this.and(toAdd.charAt(i), Cj)),
+					this.and(operand.charAt(i), Cj));
 		}
-		String result = myALU.xor(Ci, Cj) + new StringBuffer(s).reverse().toString();
-
+		if (Ci != Cj) {
+			result = "1" + new StringBuffer(s).reverse().toString();
+		} else {
+			result = "0" + new StringBuffer(s).reverse().toString();
+		}
 		return result;
 	}
 
@@ -614,13 +631,20 @@ public class ALU {
 		}
 
 		for (int i = length - 1; i >= 0; i--) {
-			Ci = myALU.fullAdder(operand1.charAt(i), operand2.charAt(i), Ci).charAt(0);
+			Ci = this.or(this.or(this.and(operand2.charAt(i), operand1.charAt(i)), this.and(operand2.charAt(i), Ci)),
+					this.and(operand1.charAt(i), Ci));
 		}
 		for (int i = length - 1; i > 0; i--) {
-			Cj = myALU.fullAdder(operand1.charAt(i), operand2.charAt(i), Ci).charAt(0);
+			Cj = this.or(this.or(this.and(operand2.charAt(i), operand1.charAt(i)), this.and(operand2.charAt(i), Cj)),
+					this.and(operand1.charAt(i), Cj));
 		}
-		char C = myALU.xor(Ci, Cj);
-		String result = C + myALU.claAdder(operand1, operand2, c).substring(1);
+		char C = 0;
+		if (Ci != Cj) {
+			C = '1';
+		} else {
+			C = '0';
+		}
+		String result = C + this.claAdder(operand1, operand2, c).substring(1);
 		return result;
 	}
 
@@ -639,7 +663,7 @@ public class ALU {
 	 */
 	public String integerAddition(String operand1, String operand2, int length) {
 		// TODO YOUR CODE HERE.
-		String result = myALU.adder(operand1, operand2, '0', length);
+		String result = this.adder(operand1, operand2, '0', length);
 		return result;
 	}
 
@@ -658,9 +682,9 @@ public class ALU {
 	 */
 	public String integerSubtraction(String operand1, String operand2, int length) {
 		// TODO YOUR CODE HERE.
-		operand2 = myALU.negation(operand2);
-		operand2 = myALU.oneAdder(operand2).substring(1);
-		String result = myALU.adder(operand1, operand2, '0', length);
+		operand2 = this.negation(operand2);
+		operand2 = this.oneAdder(operand2).substring(1);
+		String result = this.adder(operand1, operand2, '0', length);
 		return result;
 	}
 
@@ -712,10 +736,11 @@ public class ALU {
 		}
 
 		String result = "";
+		String overflow = "";
 		String rightShift = "";
 		String X = operand1;
 		String Y = operand2 + "0";// 乘数后补0，Y0=0
-		String _X = myALU.oneAdder(myALU.negation(operand1)).substring(1);// 获得被乘数的补码
+		String _X = this.oneAdder(this.negation(operand1)).substring(1);// 获得被乘数的补码
 
 		for (int i = 0; i < operand1.length(); i++) {
 			result += "0";
@@ -725,19 +750,24 @@ public class ALU {
 
 			if (Y.charAt(Y.length() - 1) == Y.charAt(Y.length() - 2)) {
 				// Y0-Y1=0,直接右移
-				rightShift = myALU.ariRightShift(result + Y, 1);
+				rightShift = this.ariRightShift(result + Y, 1);
 				result = rightShift.substring(0, X.length());
 				Y = rightShift.substring(X.length());
 			} else if (Y.charAt(Y.length() - 1) > Y.charAt(Y.length() - 2)) {
 				// Y0-Y1=1,result+X后右移
-				result = myALU.integerAddition(result, X, X.length()).substring(1);
-				rightShift = myALU.ariRightShift(result + Y, 1);
+				result = this.integerAddition(result, X, X.length()).substring(1);
+				// if (Integer.parseInt(myALU.integerTrueValue("0"+result)) >
+				// Math.pow(2, X.length() - 1) - 1) {
+				// // result+X超出表示范围
+				// overflow="1";
+				// }
+				rightShift = this.ariRightShift(result + Y, 1);
 				result = rightShift.substring(0, X.length());
 				Y = rightShift.substring(X.length());
 			} else {
 				// Y0-Y1=-1,result+(-X)后右移
-				result = myALU.integerAddition(result, _X, X.length()).substring(1);
-				rightShift = myALU.ariRightShift(result + Y, 1);
+				result = this.integerAddition(result, _X, X.length()).substring(1);
+				rightShift = this.ariRightShift(result + Y, 1);
 				result = rightShift.substring(0, X.length());
 				Y = rightShift.substring(X.length());
 			}
@@ -793,6 +823,26 @@ public class ALU {
 	 */
 	public String integerDivision(String operand1, String operand2, int length) {
 		// TODO YOUR CODE HERE.
+		boolean o1is0 = true;
+		boolean o2is0 = true;
+		String s = "";
+		for (int i = 0; i < operand1.length(); i++) {
+			if (operand1.charAt(i) == '1') {
+				o1is0 = false;
+			}
+			if (operand2.charAt(i) == '1') {
+				o2is0 = false;
+			}
+		}
+		if ((o1is0 && o2is0) || o2is0) {
+			return "NaN";
+
+		} else if (o1is0) {
+			for (int i = 0; i < 2 * length + 1; i++) {
+				s += "0";
+			}
+			return s;
+		}
 		// 对齐两个操作数
 		String toAdd = "";
 		if (operand1.length() < length) {
@@ -839,10 +889,10 @@ public class ALU {
 		for (int i = 0; i < reminder.length(); i++) {
 			if (divisor.charAt(0) != reminder.charAt(0)) {
 				// 余数和除数符号不同，做加法
-				reminder = myALU.integerAddition(reminder, divisor, reminder.length()).substring(1);
+				reminder = this.integerAddition(reminder, divisor, reminder.length()).substring(1);
 			} else {
 				// 余数和除数符号相同，做减法
-				reminder = myALU.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
+				reminder = this.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
 			}
 
 			if (reminder.charAt(0) == divisor.charAt(0)) {
@@ -852,17 +902,17 @@ public class ALU {
 				// 否则补0
 				quotient += "0";
 			}
-			leftShift = myALU.leftShift(reminder + quotient, 1);// 左移
+			leftShift = this.leftShift(reminder + quotient, 1);// 左移
 			reminder = leftShift.substring(0, reminder.length());
 			quotient = leftShift.substring(reminder.length(), leftShift.length() - 1);
 		}
 
 		if (divisor.charAt(0) != reminder.charAt(0)) {
 			// 余数和除数符号不同，做加法
-			reminder = myALU.integerAddition(reminder, divisor, reminder.length()).substring(1);
+			reminder = this.integerAddition(reminder, divisor, reminder.length()).substring(1);
 		} else {
 			// 余数和除数符号相同，做减法
-			reminder = myALU.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
+			reminder = this.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
 		}
 		if (reminder.charAt(0) == divisor.charAt(0)) {
 			// 结果与除数符号相同，商后补1
@@ -876,20 +926,20 @@ public class ALU {
 		quotient = quotient.substring(1);
 		if (operand1.charAt(0) != operand2.charAt(0)) {
 			// 若被除数符号与除数相反，则+1
-			quotient = myALU.oneAdder(quotient).substring(1);
+			quotient = this.oneAdder(quotient).substring(1);
 		}
 		if (reminder.charAt(0) != operand1.charAt(0)) {
 			// 若余数和被除数符号不同
 			if (reminder.charAt(0) == divisor.charAt(0)) {
 				// 若除数与余数符号相同，则除数减余数
-				reminder = myALU.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
+				reminder = this.integerSubtraction(reminder, divisor, reminder.length()).substring(1);
 			} else {
 				// 否则做加法
-				reminder = myALU.integerAddition(reminder, divisor, reminder.length()).substring(1);
+				reminder = this.integerAddition(reminder, divisor, reminder.length()).substring(1);
 			}
 		}
 
-		String result = "0" + reminder + quotient;
+		String result = "0" + quotient + reminder;
 
 		return result;
 
@@ -914,54 +964,83 @@ public class ALU {
 	 */
 	public String signedAddition(String operand1, String operand2, int length) {
 		// TODO YOUR CODE HERE.
+		boolean exception = false;
+		String newOperand1 = operand1.substring(1);
+		String newOperand2 = operand2.substring(1);
 		// 对齐两个操作数
+		if (operand1.length() > length || operand2.length() > length) {
+			length += 1;
+			exception = true;
+		}
 		String toAdd = "";
-		if (operand1.length() < length) {
-			for (int i = 0; i < length - operand1.length(); i++) {
+		if (newOperand1.length() < length) {
+			for (int i = 0; i < length - newOperand1.length(); i++) {
 				toAdd += "0";
 			}
-			operand1 = operand1.charAt(0) + toAdd + operand1.substring(1);
+			newOperand1 = toAdd + newOperand1;
 		}
 		toAdd = "";
-		if (operand2.length() < length) {
-			for (int i = 0; i < length - operand2.length(); i++) {
+		if (newOperand2.length() < length) {
+			for (int i = 0; i < length - newOperand2.length(); i++) {
 				toAdd += "0";
 			}
-			operand2 = operand2.charAt(0) + toAdd + operand2.substring(1);
+			newOperand2 = toAdd + newOperand2;
 		}
 
 		String result = "";
-		char sign;
+		char c = '0', s = '0';
 		if (operand1.charAt(0) == operand2.charAt(0)) {
 			// 两个操作数符号相同，去掉符号位做加法
-			result = myALU.adder("0" + operand1.substring(1), "0" + operand2.substring(1), '0', length).charAt(0)
-					+ operand1.charAt(0)
-					+ myALU.adder("0" + operand1.substring(1), "0" + operand2.substring(1), '0', length).substring(1);
-		} else {
-			String trueValue1 = myALU.integerTrueValue("0" + operand1.substring(1));
-			String trueValue2 = myALU.integerTrueValue("0" + operand2.substring(1));
-			if (Integer.parseInt(trueValue1) > Integer.parseInt(trueValue2)) {
-				sign = operand1.charAt(0);
-				result += myALU.integerSubtraction("0" + operand1.substring(1), "0" + operand2.substring(1), length)
-						.charAt(0);
-				result += sign;
-				result += myALU.integerSubtraction("0" + operand1.substring(1), "0" + operand2.substring(1), length)
-						.substring(1);
-			} else if (Integer.parseInt(trueValue1) < Integer.parseInt(trueValue2)) {
-				sign = operand2.charAt(0);
-				result += myALU.integerSubtraction("0" + operand2.substring(1), "0" + operand1.substring(1), length)
-						.charAt(0);
-				result += sign;
-				result += myALU.integerSubtraction("0" + operand2.substring(1), "0" + operand1.substring(1), length)
-						.substring(1);
-			} else {
+			for (int i = length - 1; i >= 0; i--) {
+				char tmp = this.fullAdder(newOperand1.charAt(i), newOperand2.charAt(i), c).charAt(0);
+				s = this.fullAdder(newOperand1.charAt(i), newOperand2.charAt(i), c).charAt(1);
+				result = s + result;
+				c = tmp;
+			}
+			// result = this.integerAddition(newOperand1, newOperand2,
+			// length).substring(1);
+			result = "0" + operand1.substring(0, 1) + result;
+		} else if (operand1.charAt(0) != operand2.charAt(0)) {
+			// X和Y异号
+			if (operand1.substring(1).equals(operand2.substring(1))) {
 				for (int i = 0; i < length + 2; i++) {
 					result += "0";
 				}
+			} else {
+				newOperand2 = this.oneAdder(this.negation(newOperand2)).substring(1);// 对Y取反加一
+				for (int i = length - 1; i >= 0; i--) {
+					char tmp = this.fullAdder(newOperand1.charAt(i), newOperand2.charAt(i), c).charAt(0);
+					s = this.fullAdder(newOperand1.charAt(i), newOperand2.charAt(i), c).charAt(1);
+					result = s + result;
+					c = tmp;
+				}
+				// c = this.integerAddition(newOperand1, newOperand2,
+				// length).charAt(0);
+				// result = this.integerAddition(newOperand1, newOperand2,
+				// length).substring(1);
+				if (c == '1') {
+					// 有进位，把进位去掉，符号与被减数相同
+					result = "0" + operand1.substring(0, 1) + result;
+				} else {
+					// 无进位，把结果取反加一，符号与被减数相反
+					result = this.oneAdder(this.negation(result)).substring(1);
+					result = "0" + String.valueOf(1 - Integer.parseInt(operand1.substring(0, 1))) + result;
+				}
 			}
+
+		}
+		if (exception) {
+			if (result.charAt(2) != operand1.charAt(0)) {
+				// 溢出
+				return "1" + result.substring(1, 2) + result.substring(result.length() - (length - 1));
+			} else {
+				return "0" + result.substring(1, 2) + result.substring(result.length() - (length - 1));
+			}
+
+		} else {
+			return result;
 		}
 
-		return result;
 	}
 
 	/**
@@ -984,7 +1063,170 @@ public class ALU {
 	 */
 	public String floatAddition(String operand1, String operand2, int eLength, int sLength, int gLength) {
 		// TODO YOUR CODE HERE.
-		return null;
+		boolean Xis0 = true;
+		boolean Yis0 = true;
+		boolean normalExcute = false;// 是否进行正常计算
+		String mantissa1 = "1" + operand1.substring(eLength + 1);
+		String mantissa2 = "1" + operand2.substring(eLength + 1);// 尾数前补1
+		int exponent1 = Integer.parseInt(this.integerTrueValue("0" + operand1.substring(1, eLength + 1)));
+		int exponent2 = Integer.parseInt(this.integerTrueValue("0" + operand2.substring(1, eLength + 1)));
+		String exponent = "";
+		String result = "";
+
+		// 根据保护位扩展尾数
+		for (int i = 0; i < gLength; i++) {
+			mantissa1 += "0";
+			mantissa2 += "0";
+		}
+
+		// 检查被加数X是否等于0
+		for (int i = 1; i < operand1.length(); i++) {
+			if (operand1.charAt(i) == '1') {
+				Xis0 = false;
+				break;
+			}
+		}
+		if (Xis0) {
+			// 若X=0，Z=Y
+			result = "0" + operand2;
+		} else {
+			// X≠0，检查加数Y是否等于0
+			for (int i = 1; i < operand2.length(); i++) {
+				if (operand2.charAt(i) == '1') {
+					Yis0 = false;
+					break;
+				}
+			}
+			if (Yis0) {
+				// 若Y=0，Z=X
+				result = "0" + operand1;
+			} else {
+				// X和Y都≠0
+				normalExcute = true;
+			}
+		}
+
+		if (normalExcute) {
+			// 比较指数部分是否对齐
+			if (exponent1 != exponent2) {
+				// 指数不相等，增量较小的指数并右移相应尾数
+				if (exponent1 > exponent2) {
+					for (int i = 0; i < exponent1 - exponent2; i++) {
+						mantissa2 = this.logRightShift(mantissa2, 1);
+						int num = 0;
+						for (int j = 0; j < mantissa2.length(); j++) {
+							if (mantissa2.charAt(j) == '0') {
+								num++;
+							}
+						}
+						if (num == mantissa2.length()) {
+							// 右移后尾数=0
+							result = "0" + operand1;
+							break;
+						}
+					}
+					exponent2 = exponent1;
+				} else {
+					for (int i = 0; i < exponent2 - exponent1; i++) {
+						mantissa1 = this.logRightShift(mantissa1, 1);
+						int num = 0;
+						for (int j = 0; j < mantissa1.length(); j++) {
+							if (mantissa1.charAt(j) == '0') {
+								num++;
+							}
+						}
+						if (num == mantissa1.length()) {
+							// 右移后尾数=0
+							result = "0" + operand2;
+							break;
+						}
+					}
+					exponent1 = exponent2;
+				}
+			}
+
+			// 现在指数相等，且已经规格化了
+			String significand = "";
+			boolean continuing1 = false, continuing2 = false;
+			significand = this.signedAddition(operand1.charAt(0) + mantissa1, operand2.charAt(0) + mantissa2,
+					mantissa1.length());
+			char overflow = significand.charAt(0);// 尾数溢出位
+			char sign = significand.charAt(1);// 尾数符号位
+			significand = significand.substring(2);
+
+			int num = 0;
+			for (int i = 0; i < significand.length(); i++) {
+				if (significand.charAt(i) == '0') {
+					num++;
+				}
+			}
+			if (num == significand.length()) {
+				// 尾数=0,Z=0
+				for (int i = 0; i < 1 + eLength + sLength; i++) {
+					result += "0";
+				}
+			} else if (overflow == '1') {
+				// 尾数溢出
+				continuing1 = true;
+				significand = this.logRightShift(significand, 1);// 右移尾数
+				exponent = this.oneAdder(this.integerRepresentation(String.valueOf(exponent1), eLength)).substring(1);// 指数+1
+				int numOf1 = 0;
+				for (int i = 0; i < exponent.length(); i++) {
+					if (exponent.charAt(i) == '1')
+						numOf1++;
+				}
+				if (numOf1 == exponent.length()) {
+					// 指数上溢
+					String mantissa = "";
+					// 尾数清零
+					for (int i = 0; i < sLength; i++) {
+						mantissa += "0";
+					}
+					result += "1";// 最后结果溢出
+					result += sign;
+					result += exponent + mantissa;
+				} else {
+					continuing2 = true;
+				}
+			} else if (!continuing1 || continuing2) {
+				// 检查是否规格化
+				exponent = this.integerRepresentation(String.valueOf(exponent1), eLength);
+				for (int i = 0; i < significand.length(); i++) {
+					if (significand.charAt(0) != '1') {
+						// 没有规格化，左移尾数
+						significand = this.leftShift(significand, 1);
+						// 指数减一
+						exponent = this.integerSubtraction(exponent, "0001", eLength).substring(1);
+						// 检查指数是否下溢
+						int numOf0 = 0;
+						for (int j = 0; j < exponent.length(); j++) {
+							if (exponent.charAt(j) == '0')
+								numOf0++;
+						}
+						if (numOf0 == exponent.length()) {
+							// 指数下溢
+							String mantissa = "";
+							// 尾数清零
+							for (int z = 0; z < sLength; z++) {
+								mantissa += "0";
+							}
+							result += "0";
+							result += sign;
+							result += exponent + mantissa;
+							break;
+						}
+					} else {
+						// 结果规格化了
+						result += "0";
+						result += sign;
+						result += exponent + significand.substring(1, sLength + 1);
+						break;
+					}
+				}
+
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -1007,7 +1249,9 @@ public class ALU {
 	 */
 	public String floatSubtraction(String operand1, String operand2, int eLength, int sLength, int gLength) {
 		// TODO YOUR CODE HERE.
-		return null;
+		operand2 = this.negation(operand2.substring(0, 1)) + operand2.substring(1);
+		String result = this.floatAddition(operand1, operand2, eLength, sLength, gLength);
+		return result;
 	}
 
 	/**
@@ -1028,7 +1272,134 @@ public class ALU {
 	 */
 	public String floatMultiplication(String operand1, String operand2, int eLength, int sLength) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String mantissa = "";
+		char sign = this.xor(operand1.charAt(0), operand2.charAt(0));// 符号位做异或
+		// 判断X和Y是否为0
+		boolean Xis0 = true, Yis0 = true;
+		for (int i = 1; i < operand1.length(); i++) {
+			if (operand1.charAt(i) == '1') {
+				Xis0 = false;
+				break;
+			}
+		}
+		for (int i = 1; i < operand2.length(); i++) {
+			if (operand2.charAt(i) == '1') {
+				Yis0 = false;
+				break;
+			}
+		}
+		if (Xis0 || Yis0) {
+			// X和Y有一个是0
+			for (int i = 0; i < eLength + sLength + 2; i++) {
+				result += "0";
+			}
+		} else {
+			// X和Y都不为0
+			String exponent = this.signedAddition("0" + operand1.substring(1, eLength + 1),
+					"0" + operand2.substring(1, eLength + 1), eLength).substring(2);
+			exponent = this.integerRepresentation(
+					String.valueOf(
+							Integer.parseInt(this.integerTrueValue(exponent)) - (int) (Math.pow(2, eLength - 1) - 1)),
+					eLength);// 减去偏值
+			// 检查指数是否上溢
+			boolean overflow = true;
+			for (int i = 0; i < exponent.length(); i++) {
+				if (exponent.charAt(i) == '0') {
+					overflow = false;
+				}
+			}
+			if (overflow) {
+				// 报告上溢
+				mantissa = "";
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+				result += "1";
+				result += sign;
+				result += exponent + mantissa;
+			}
+			// 检查指数是否下溢
+			boolean underflow = true;
+			for (int i = 0; i < exponent.length(); i++) {
+				if (exponent.charAt(i) == '1') {
+					underflow = false;
+				}
+			}
+			if (underflow) {
+				// 报告下溢
+				mantissa = "";
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+				result += "0";
+				result += sign;
+				result += exponent + mantissa;
+			}
+			// 尾数相乘
+			String mantissa1 = "1" + operand1.substring(eLength + 1);
+			String mantissa2 = "1" + operand2.substring(eLength + 1);
+			String multiMantissa = this.integerMultiplication("0" + mantissa1, "0" + mantissa2, 2 * (sLength + 2));// 尾数前加一位“0”表示正数相乘
+			char over = multiMantissa.charAt(0);// 溢出位
+			multiMantissa = multiMantissa.substring(3);// 去掉表示符号的两位“0”
+
+			if (multiMantissa.charAt(0) == '1') {
+				// 第一位为1，小数点要左移
+				exponent = this.oneAdder(exponent).substring(1);// 指数加一
+				// 检查指数是否上溢
+				boolean overflow1 = true;
+				for (int i1 = 0; i1 < exponent.length(); i1++) {
+					if (exponent.charAt(i1) == '0') {
+						overflow1 = false;
+					}
+				}
+				if (overflow1) {
+					// 报告上溢
+					mantissa = "";
+					for (int i1 = 0; i1 < sLength; i1++) {
+						mantissa += "0";
+					}
+					result += "1";
+					result += sign;
+					result += exponent + mantissa;
+				} else {
+					result += "0";
+					result += sign;
+					result += exponent + multiMantissa.substring(1, sLength + 1);
+				}
+			} else
+				for (int i = 0; i < multiMantissa.length(); i++) {
+					if (multiMantissa.charAt(1) != '1') {
+						// 没有规格化，左移尾数
+						multiMantissa = this.leftShift(multiMantissa, 1);
+						exponent = this.integerSubtraction(exponent, "0001", eLength).substring(1);// 指数减一
+						// 检查指数是否下溢
+						boolean underflow1 = true;
+						for (int i1 = 0; i1 < exponent.length(); i1++) {
+							if (exponent.charAt(i1) == '1') {
+								underflow1 = false;
+							}
+						}
+						if (underflow1) {
+							// 报告下溢
+							mantissa = "";
+							for (int i1 = 0; i1 < sLength; i1++) {
+								mantissa += "0";
+							}
+							result += "0";
+							result += sign;
+							result += exponent + mantissa;
+						}
+					} else {
+						result += "0";
+						result += sign;
+						result += exponent + multiMantissa.substring(2, sLength + 2);
+						break;
+					}
+				}
+
+		}
+		return result;
 	}
 
 	/**
@@ -1049,6 +1420,146 @@ public class ALU {
 	 */
 	public String floatDivision(String operand1, String operand2, int eLength, int sLength) {
 		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String mantissa = "";
+		char sign = this.xor(operand1.charAt(0), operand2.charAt(0));// 符号位做异或
+		// 判断X和Y是否为0
+		boolean Xis0 = true, Yis0 = true;
+		for (int i = 1; i < operand1.length(); i++) {
+			if (operand1.charAt(i) == '1') {
+				Xis0 = false;
+				break;
+			}
+		}
+		for (int i = 1; i < operand2.length(); i++) {
+			if (operand2.charAt(i) == '1') {
+				Yis0 = false;
+				break;
+			}
+		}
+		if (Xis0) {
+			// 被除数是0，结果返回0
+			for (int i = 0; i < eLength + sLength + 2; i++) {
+				result += "0";
+			}
+		} else if (Yis0) {
+			// 除数是0，结果返回正无穷
+			result += "0";
+			for (int i = 0; i < eLength; i++) {
+				result += "1";
+			}
+			for (int i = 0; i < sLength; i++) {
+				result += "0";
+			}
+		} else {
+			// 被除数和除数都不为0
+
+			String exponent = this
+					.integerSubtraction(operand1.substring(1, eLength + 1), operand2.substring(1, eLength + 1), eLength)
+					.substring(1);// 指数相减
+			exponent = this.integerRepresentation(
+					String.valueOf(
+							Integer.parseInt(this.integerTrueValue(exponent)) + (int) (Math.pow(2, eLength - 1) - 1)),
+					eLength);// 加上偏值
+			// System.out.println("exponent:" + exponent);
+			// 检查指数是否上溢
+			boolean overflow = true;
+			for (int i = 0; i < exponent.length(); i++) {
+				if (exponent.charAt(i) == '0') {
+					overflow = false;
+				}
+			}
+			if (overflow) {
+				// 报告上溢
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+				result += "1";
+				result += sign;
+				result += exponent + mantissa;
+			}
+			// 检查指数是否下溢
+			boolean underflow = true;
+			for (int i = 0; i < exponent.length(); i++) {
+				if (exponent.charAt(i) == '1') {
+					underflow = false;
+				}
+			}
+			if (underflow) {
+				// 报告下溢
+				for (int i = 0; i < sLength; i++) {
+					mantissa += "0";
+				}
+				result += "0";
+				result += sign;
+				result += exponent + mantissa;
+			}
+			// 尾数相除
+			String mantissa1 = "1" + operand1.substring(eLength + 1);
+			String mantissa2 = "1" + operand2.substring(eLength + 1);
+			String reminder = mantissa1;
+			String divisor = mantissa2;
+			String quotient = "";
+			// 商补0
+			while (quotient.length() != mantissa1.length()) {
+				quotient += "0";
+			}
+			while (divisor.length() != mantissa2.length() * 2) {
+				divisor += "0";
+			}
+			for (int i = 0; i < reminder.length(); i++) {
+				if (Integer.parseInt(this.integerTrueValue(
+						this.integerSubtraction(reminder, divisor, mantissa1.length()).substring(1))) > 0) {
+					// enough,reminder-divisor,添1左移
+					reminder = this.integerSubtraction(reminder, divisor, mantissa1.length()).substring(1);
+					quotient += "1";
+					reminder = this.leftShift(reminder + quotient, 1).substring(0, mantissa1.length());
+					quotient = this.leftShift(reminder + quotient, 1).substring(mantissa1.length(),
+							(reminder + quotient).length() - 1);
+					// System.out.println("enough reminder:" + reminder);
+					// System.out.println("quotient:" + quotient);
+				} else {
+					// not enough,添0左移
+					quotient += "0";
+					reminder = this.leftShift(reminder + quotient, 1).substring(0, mantissa1.length());
+					quotient = this.leftShift(reminder + quotient, 1).substring(mantissa1.length(),
+							(reminder + quotient).length() - 1);
+					// System.out.println("not reminder:" + reminder);
+					// System.out.println("quotient:" + quotient);
+				}
+			}
+
+			// 检查是否规格化
+			if (quotient.charAt(0) == '1') {
+				// 规格化了
+				result += "0";
+				result += sign;
+				result += exponent + quotient.substring(1, sLength + 1);
+			} else {
+				// 没有规格化
+				for (int i = 0; i < quotient.length(); i++) {
+					if (quotient.charAt(0) != '1') {
+						quotient = this.leftShift(quotient, 1);
+						exponent = this.integerSubtraction(exponent, "0001", eLength).substring(1);// 指数减一
+						if (Integer.parseInt(this.integerTrueValue(exponent)) == 0) {
+							// 指数下溢
+							mantissa = "";
+							for (int i1 = 0; i1 < sLength; i1++) {
+								mantissa += "0";
+							}
+							result += "0";
+							result += sign;
+							result += exponent + mantissa;
+						} else {
+							result += "0";
+							result += sign;
+							result += exponent + quotient.substring(1, sLength + 1);
+							break;
+						}
+					}
+				}
+			}
+		}
+		return result;
 	}
 }
