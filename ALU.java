@@ -127,7 +127,7 @@ public class ALU {
 			for (int i = 0; i < sLength; i++) {
 				result += "0";
 			}
-		} else if (decTrueValue > Math.pow(2, eLength - 1) * (2 - Math.pow(2, -sLength))) {
+		} else if (decTrueValue > Math.pow(2, Math.pow(2, eLength)) * (2 - Math.pow(2, -sLength))) {
 			// 正无穷
 			result += "0";
 			for (int i = 0; i < eLength; i++) {
@@ -137,7 +137,7 @@ public class ALU {
 				result += "0";
 			}
 
-		} else if (decTrueValue < -(Math.pow(2, eLength - 1) * (2 - Math.pow(2, -sLength)))) {
+		} else if (decTrueValue < -((Math.pow(2, Math.pow(2, eLength)) * (2 - Math.pow(2, -sLength))))) {
 			// 负无穷
 			result += "1";
 			for (int i = 0; i < eLength; i++) {
@@ -146,7 +146,8 @@ public class ALU {
 			for (int i = 0; i < sLength; i++) {
 				result += "0";
 			}
-		} else if (decTrueValue < Math.pow(2, 1 - eLength) && decTrueValue > -Math.pow(2, 1 - eLength)) {
+		} else if (decTrueValue < Math.pow(2, Math.pow(2, 1 - eLength))
+				&& decTrueValue > -Math.pow(2, Math.pow(2, 1 - eLength))) {
 			// 反规格化
 			if (decTrueValue > 0) {
 				result += "0";
@@ -170,7 +171,7 @@ public class ALU {
 					break;
 				}
 			}
-			mantissa = binDoublePart.substring((int) Math.pow(2, eLength - 2));
+			mantissa = binDoublePart;
 			// 调整尾数长度
 			if (mantissa.length() < sLength) {
 				for (int i = 0; i < sLength; i++) {
@@ -179,6 +180,12 @@ public class ALU {
 			} else {
 				mantissa = mantissa.substring(0, sLength);
 			}
+
+			String exponent = "";
+			while (exponent.length() != eLength)
+				exponent += "0";
+
+			result += exponent + mantissa;
 
 		} else {
 			// 得出符号位，并分出整数部分和小数部分
@@ -200,6 +207,7 @@ public class ALU {
 					break;
 			}
 			binIntegerPart = new StringBuffer(binIntegerPart).reverse().toString();
+			System.out.println(binIntegerPart);
 
 			while (decDoublePart != 1) {
 				if (decDoublePart * 2 < 1) {
@@ -241,6 +249,8 @@ public class ALU {
 			String binExponent = this.integerRepresentation(String.valueOf(integerExponent), eLength);
 			result += binExponent + mantissa;
 		}
+
+		System.out.println(result);
 
 		return result;
 	}
@@ -1110,6 +1120,7 @@ public class ALU {
 		if (Xis0) {
 			// 若X=0，Z=Y
 			result = "0" + operand2;
+			return result;
 		} else {
 			// X≠0，检查加数Y是否等于0
 			for (int i = 1; i < operand2.length(); i++) {
@@ -1121,6 +1132,7 @@ public class ALU {
 			if (Yis0) {
 				// 若Y=0，Z=X
 				result = "0" + operand1;
+				return result;
 			} else {
 				// X和Y都≠0
 				normalExcute = true;
@@ -1143,7 +1155,7 @@ public class ALU {
 						if (num == mantissa2.length()) {
 							// 右移后尾数=0
 							result = "0" + operand1;
-							break;
+							return result;
 						}
 					}
 					exponent2 = exponent1;
@@ -1159,12 +1171,14 @@ public class ALU {
 						if (num == mantissa1.length()) {
 							// 右移后尾数=0
 							result = "0" + operand2;
-							break;
+							return result;
 						}
 					}
 					exponent1 = exponent2;
 				}
 			}
+
+			exponent = this.integerRepresentation(String.valueOf(exponent1), eLength);
 
 			// 现在指数相等，且已经规格化了
 			String significand = "";
