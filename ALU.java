@@ -529,14 +529,35 @@ public class ALU {
 	public String claAdder(String operand1, String operand2, char c) {
 		// TODO YOUR CODE HERE.
 		String s = "";
-		char P, G, Ci;
+		char[] P = new char[4], G = new char[4], C = new char[5];
+		for (int i = 0; i < 4; i++) {
+			P[i] = this.or(operand1.charAt(3 - i), operand2.charAt(3 - i));
+			G[i] = this.and(operand1.charAt(3 - i), operand2.charAt(3 - i));
+
+		}
+		C[0] = c;
+		// C1 = G1 + P1C0
+		C[1] = this.or(G[0], this.and(P[0], C[0]));
+		// C2 = G2 + P2G1 + P2P1C0
+		C[2] = this.or(this.or(G[1], this.and(P[1], G[0])), this.and(this.and(P[1], P[0]), C[0]));
+		// C3 = G3 + P3G2 + P3P2G1 + P3P2P1C0
+		C[3] = this.or(this.or(this.or(G[2], this.and(P[2], G[1])), this.and(this.and(P[2], P[1]), G[0])),
+				this.and(this.and(this.and(P[2], P[1]), P[0]), C[0]));
+		// C4 = G4 + P4G3 + P4P3G2 + P4P3P2G1 + P4P3P2P1C0
+		C[4] = or(or(or(G[3], and(P[3], G[2])), and(and(P[3], P[2]), G[1])),
+				or(and(and(P[3], P[2]), and(P[1], G[0])), and(and(P[3], P[2]), and(and(P[1], P[0]), C[0]))));
+		for (int i = 0; i < 4; i++) {
+			s += this.xor(this.xor(operand1.charAt(3 - i), operand2.charAt(3 - i)), C[i]);
+		}
+		String result = C[4] + new StringBuffer(s).reverse().toString();
+		return result;
+	}
+
+	public String myClaAdder(String operand1, String operand2, char c) {
+		String s = "";
 		for (int i = operand1.length() - 1; i >= 0; i--) {
 			s += this.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(1);
 			c = this.fullAdder(operand1.charAt(i), operand2.charAt(i), c).charAt(0);
-		}
-		for (int i = operand1.length() - 1; i >= 0; i--) {
-			P = this.and(operand1.charAt(i), operand2.charAt(i));
-			G = this.or(operand1.charAt(i), operand2.charAt(i));
 		}
 		String result = c + new StringBuffer(s).reverse().toString();
 		return result;
@@ -644,7 +665,7 @@ public class ALU {
 		} else {
 			C = '0';
 		}
-		String result = C + this.claAdder(operand1, operand2, c).substring(1);
+		String result = C + this.myClaAdder(operand1, operand2, c).substring(1);
 		return result;
 	}
 
@@ -1168,7 +1189,7 @@ public class ALU {
 			} else if (overflow == '1') {
 				// 尾数溢出
 				continuing1 = true;
-				significand = this.logRightShift(significand, 1);// 右移尾数
+				significand = "1" + this.logRightShift(significand, 1).substring(1);// 右移尾数,第一位是1
 				exponent = this.oneAdder(this.integerRepresentation(String.valueOf(exponent1), eLength)).substring(1);// 指数+1
 				int numOf1 = 0;
 				for (int i = 0; i < exponent.length(); i++) {
@@ -1186,7 +1207,9 @@ public class ALU {
 					result += sign;
 					result += exponent + mantissa;
 				} else {
-					continuing2 = true;
+					result += "0";
+					result += sign;
+					result += exponent + significand.substring(1, sLength + 1);
 				}
 			} else if (!continuing1 || continuing2) {
 				// 检查是否规格化
@@ -1509,7 +1532,7 @@ public class ALU {
 			}
 			for (int i = 0; i < reminder.length(); i++) {
 				if (Integer.parseInt(this.integerTrueValue(
-						this.integerSubtraction(reminder, divisor, mantissa1.length()).substring(1))) > 0) {
+						this.integerSubtraction(reminder, divisor, mantissa1.length()).substring(1))) >= 0) {
 					// enough,reminder-divisor,添1左移
 					reminder = this.integerSubtraction(reminder, divisor, mantissa1.length()).substring(1);
 					quotient += "1";
@@ -1560,6 +1583,7 @@ public class ALU {
 				}
 			}
 		}
+		// System.out.println(result);
 		return result;
 	}
 }
